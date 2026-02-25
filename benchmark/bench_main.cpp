@@ -6,6 +6,9 @@
 #ifdef ENABLE_CUDA
 #include "gemm_cuda.h"
 #endif
+#ifdef ENABLE_OPENBLAS
+#include "gemm_blas.h"
+#endif
 
 #include <cstdio>
 #include <cstring>
@@ -19,9 +22,12 @@ void bench_layer3(int N, double naive_gflops);
 #ifdef ENABLE_CUDA
 void bench_layer4(int N, double naive_gflops);
 #endif
+#ifdef ENABLE_OPENBLAS
+void bench_layer5(int N, double naive_gflops);
+#endif
 
 static void print_usage(const char* prog) {
-    printf("Usage: %s [--layer 1|2|3|4|all] [--size 256|512|1024|2048|4096|all] [--runs N]\n",
+    printf("Usage: %s [--layer 1|2|3|4|5|all] [--size 256|512|1024|2048|4096|all] [--runs N]\n",
            prog);
 }
 
@@ -81,6 +87,10 @@ int main(int argc, char* argv[]) {
 #ifdef ENABLE_CUDA
         if (layer_filter == 0 || layer_filter == 4)
             bench_layer4(N, naive_gflops);
+#endif
+#ifdef ENABLE_OPENBLAS
+        if (layer_filter == 0 || layer_filter == 5)
+            bench_layer5(N, naive_gflops);
 #endif
         printf("\n");
     }

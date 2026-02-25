@@ -68,6 +68,36 @@
 
 ---
 
+## Layer 5: OpenBLAS Comparison
+
+> Run after installing OpenBLAS:
+> ```bash
+> sudo apt-get install libopenblas-dev
+> cmake -S . -B build_blas -DENABLE_OPENBLAS=ON -DENABLE_OPENMP=ON -DCMAKE_BUILD_TYPE=Release
+> cmake --build build_blas -j$(nproc)
+> build_blas/hp_gemm_bench --layer 5 --size all
+> ```
+
+### Single-thread: our avx2 4×8 vs OpenBLAS 1T
+
+| N | avx2 4×8 (GFLOPS) | OpenBLAS 1T (GFLOPS) | OpenBLAS/ours |
+|---|------------------|---------------------|--------------|
+| 256 | 47.99 | [填入] | [填入]× |
+| 512 | 35.24 | [填入] | [填入]× |
+| 1024 | 42.18 | [填入] | [填入]× |
+| 2048 | 7.25 | [填入] | [填入]× |
+| 4096 | 6.27 | [填入] | [填入]× |
+
+### Multi-thread: our OpenMP vs OpenBLAS (all cores)
+
+| N | our OpenMP (GFLOPS) | OpenBLAS MT (GFLOPS) | OpenBLAS/ours |
+|---|--------------------|--------------------|--------------|
+| 1024 | [填入] | [填入] | [填入]× |
+| 2048 | 43.13 | [填入] | [填入]× |
+| 4096 | [填入] | [填入] | [填入]× |
+
+---
+
 ## Summary: Peak Performance vs Naive
 
 | Kernel | N=1024 GFLOPS | vs naive |
@@ -78,3 +108,5 @@
 | avx2 4×8 | 42.18 | 28.83× |
 | openmp (max threads) | 112.03 | 76.59× |
 | cuda shared | 501.16 | 343.26× |
+| OpenBLAS 1T | [填入] | [填入]× |
+| OpenBLAS MT | [填入] | [填入]× |

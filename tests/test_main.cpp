@@ -2,13 +2,15 @@
 #include <cstdlib>
 
 // test_main.cpp: test runner entry point
-// Individual layer tests register themselves via a simple registry.
 
 extern int run_layer1_tests();
 extern int run_layer2_tests();
 extern int run_layer3_tests();
 #ifdef ENABLE_CUDA
 extern int run_layer4_tests();
+#endif
+#ifdef ENABLE_OPENBLAS
+extern int run_layer5_tests();
 #endif
 
 int main() {
@@ -28,6 +30,11 @@ int main() {
 #ifdef ENABLE_CUDA
     printf("\n--- Layer 4: CUDA GEMM ---\n");
     failures += run_layer4_tests();
+#endif
+
+#ifdef ENABLE_OPENBLAS
+    printf("\n--- Layer 5: OpenBLAS GEMM ---\n");
+    failures += run_layer5_tests();
 #endif
 
     printf("\n=== Summary: %d test(s) failed ===\n\n", failures);

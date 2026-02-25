@@ -5,8 +5,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ─── Options ──────────────────────────────────────────────────────────────────
-option(ENABLE_CUDA   "Build CUDA Layer 4 kernels"   OFF)
-option(ENABLE_OPENMP "Build with OpenMP threading"  ON)
+option(ENABLE_CUDA     "Build CUDA Layer 4 kernels"        OFF)
+option(ENABLE_OPENMP   "Build with OpenMP threading"      ON)
+option(ENABLE_OPENBLAS "Build Layer 5 OpenBLAS comparison" OFF)
 
 # ─── OpenMP ───────────────────────────────────────────────────────────────────
 if(ENABLE_OPENMP)
@@ -66,6 +67,44 @@ if(ENABLE_CUDA)
     )
 endif()
 
+# ─── Layer 5: OpenBLAS comparison (optional) ──────────────────────────────────
+if(ENABLE_OPENBLAS)
+    # Try pkg-config first, then manual search
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(OPENBLAS openblas)
+    endif()
+
+    if(NOT OPENBLAS_FOUND)
+        # Fallback: search common install paths
+        find_path(OPENBLAS_INCLUDE_DIR cblas.h
+            PATHS /usr/include/openblas /usr/local/include/openblas
+                  /usr/include /usr/local/include
+        )
+        find_library(OPENBLAS_LIBRARIES openblas
+            PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu
+        )
+        if(OPENBLAS_INCLUDE_DIR AND OPENBLAS_LIBRARIES)
+            set(OPENBLAS_FOUND TRUE)
+        endif()
+    endif()
+
+    if(NOT OPENBLAS_FOUND)
+        message(FATAL_ERROR
+            "OpenBLAS not found. Install with:\n"
+            "  sudo apt-get install libopenblas-dev\n"
+            "Then reconfigure with -DENABLE_OPENBLAS=ON")
+    endif()
+
+    add_library(gemm_layer5 STATIC
+        src/layer5/gemm_openblas.cpp
+    )
+    target_compile_definitions(gemm_layer5 PUBLIC ENABLE_OPENBLAS)
+    target_compile_options(gemm_layer5 PRIVATE -O3 -march=native)
+    target_include_directories(gemm_layer5 PUBLIC ${OPENBLAS_INCLUDE_DIR})
+    target_link_libraries(gemm_layer5 PUBLIC ${OPENBLAS_LIBRARIES})
+endif()
+
 # ─── Benchmark Executable ─────────────────────────────────────────────────────
 set(BENCH_SOURCES
     benchmark/bench_main.cpp
@@ -76,12 +115,19 @@ set(BENCH_SOURCES
 if(ENABLE_CUDA)
     list(APPEND BENCH_SOURCES benchmark/bench_layer4.cpp)
 endif()
+if(ENABLE_OPENBLAS)
+    list(APPEND BENCH_SOURCES benchmark/bench_layer5.cpp)
+endif()
 
 add_executable(hp_gemm_bench ${BENCH_SOURCES})
 target_link_libraries(hp_gemm_bench PRIVATE gemm_layer1 gemm_layer2 gemm_layer3)
 if(ENABLE_CUDA)
     target_link_libraries(hp_gemm_bench PRIVATE gemm_layer4)
     target_compile_definitions(hp_gemm_bench PRIVATE ENABLE_CUDA)
+endif()
+if(ENABLE_OPENBLAS)
+    target_link_libraries(hp_gemm_bench PRIVATE gemm_layer5)
+    target_compile_definitions(hp_gemm_bench PRIVATE ENABLE_OPENBLAS)
 endif()
 
 # ─── Test Executable ──────────────────────────────────────────────────────────
@@ -94,12 +140,19 @@ set(TEST_SOURCES
 if(ENABLE_CUDA)
     list(APPEND TEST_SOURCES tests/test_layer4.cpp)
 endif()
+if(ENABLE_OPENBLAS)
+    list(APPEND TEST_SOURCES tests/test_layer5.cpp)
+endif()
 
 add_executable(hp_gemm_tests ${TEST_SOURCES})
 target_link_libraries(hp_gemm_tests PRIVATE gemm_layer1 gemm_layer2 gemm_layer3)
 if(ENABLE_CUDA)
     target_link_libraries(hp_gemm_tests PRIVATE gemm_layer4)
     target_compile_definitions(hp_gemm_tests PRIVATE ENABLE_CUDA)
+endif()
+if(ENABLE_OPENBLAS)
+    target_link_libraries(hp_gemm_tests PRIVATE gemm_layer5)
+    target_compile_definitions(hp_gemm_tests PRIVATE ENABLE_OPENBLAS)
 endif()
 
 enable_testing()
