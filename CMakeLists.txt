@@ -17,6 +17,7 @@ endif()
 if(ENABLE_CUDA)
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 17)
+    find_package(CUDAToolkit REQUIRED)
     # sm_75=Turing(RTX20xx), sm_86=Ampere(RTX30xx), sm_89=Ada(RTX40xx)
     set(CMAKE_CUDA_ARCHITECTURES 75 86 89)
 endif()
@@ -55,9 +56,11 @@ if(ENABLE_CUDA)
         src/layer4/gemm_cuda_naive.cu
         src/layer4/gemm_cuda_shared.cu
     )
+    target_compile_definitions(gemm_layer4 PUBLIC ENABLE_CUDA)
     target_compile_options(gemm_layer4 PRIVATE
         $<$<COMPILE_LANGUAGE:CUDA>:--use_fast_math;-O3>
     )
+    target_link_libraries(gemm_layer4 PUBLIC CUDA::cudart)
     set_target_properties(gemm_layer4 PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON
     )
