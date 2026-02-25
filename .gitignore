@@ -1,0 +1,6 @@
+build_cpu/
+build_cuda/
+results/*.txt
+results/*.csv
+*.o
+*.a
