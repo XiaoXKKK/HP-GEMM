@@ -1,0 +1,3 @@
+# results/.gitkeep
+# Benchmark output files (*.txt, *.csv) are stored here.
+# Tracked by git only as a placeholder; actual result files are gitignored.
